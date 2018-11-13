@@ -36,17 +36,23 @@ class Restaurant:
 		# self.initialise_visualization()
 
 	def initialise_tables(self):
-		# table_locations = [(1.,1.)]
-		table_locations = []
-		K = 5
-		kx = (K + 1)
-		remainder = 1
-		if self._number_of_tables % K:
-			remainder += 1 
-		ky = ((int(self._number_of_tables / K)) + remainder)
-		for y in np.arange(0 + ky, self._Ny - ky, ky):
-			for x in np.arange(0 + kx, self._Nx - kx, kx):
-				table_locations.append((float(int(x)), (float(int(y)))))
+		if self._number_of_tables == 1:
+			table_locations = [(1.,1.)]
+		elif self._number_of_tables == 2:
+			table_locations = [(1.,1.),(2.,2.)]
+		elif self._number_of_tables == 3:
+			table_locations = [(1.,1.),(2.,2.),(3.,3.)]
+		else:
+			table_locations = []
+			K = 5
+			kx = (K + 1)
+			remainder = 1
+			if self._number_of_tables % K:
+				remainder += 1 
+			ky = ((int(self._number_of_tables / K)) + remainder)
+			for y in np.arange(0 + ky, self._Ny - ky, ky):
+				for x in np.arange(0 + kx, self._Nx - kx, kx):
+					table_locations.append((float(int(x)), (float(int(y)))))
 
 		for elem in range(self._number_of_tables):
 			self._all_tables[elem] = (table_locations[elem][0], table_locations[elem][1], randint(2,2))
