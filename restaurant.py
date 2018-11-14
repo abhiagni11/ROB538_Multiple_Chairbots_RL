@@ -11,6 +11,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from collections import namedtuple
 from itertools import count
+
+
 class Restaurant:
 
 	def __init__(self, number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, number_of_steps):
@@ -27,13 +29,12 @@ class Restaurant:
 		self._max_number_of_groups = max_number_of_groups
 		self._agent_rewards = [0] * self._number_of_agents
 		self._system_reward = 0
-		self._action_dim = (5,)  # up, right, down, left
+		self._action_dim = (5,)  # none, up, right, down, left
 		self._action_dict = {"none": 0, "up": 1, "right": 2, "down": 3, "left": 4}
 		self._action_coords = [(0, 0), (-1, 0), (0, 1), (1, 0), (0, -1)]
 		self.fig, self.ax = plt.subplots()
 		self._grid_viz = [[0 for x in range(self._Nx + 2)] for x in range(self._Ny + 2)]
 		self._successes = 0
-		# self.initialise_visualization()
 
 	def initialise_tables(self):
 		if self._number_of_tables == 1:
@@ -60,8 +61,6 @@ class Restaurant:
 	def initialise_agents(self):
 		for elem in range(self._number_of_agents):
 			self._all_agents[elem] = (0, 0, self._all_tables[elem][0], self._all_tables[elem][1], -1)
-			# self._all_agents[elem] = (0, 0, randint(0, self._Nx), randint(0, self._Ny), -1)
-			# self._all_agents[elem] = (0, 0, float(int(self._Nx/2)), 0, -1)
 			self._agent_rewards[elem] = 0
 
 	def initialise_groups(self):
@@ -152,7 +151,6 @@ class Restaurant:
 
 	def update_group_location(self, group_number, location):
 		# Update the particular group's location
-		# print("group: {}".format(self._groups_of_people[group_number][0]))
 		self._groups_of_people[group_number] = list(self._groups_of_people[group_number])
 		self._groups_of_people[group_number][0] = location[0]
 		self._groups_of_people[group_number][1] = location[1]
@@ -185,10 +183,6 @@ class Restaurant:
 			if ((self._step < (iter_step * 10)) and (self._step % iter_step == 0)):
 				self._groups_of_people[self._number_of_groups_present] = (self._Nx/2, 0, randint(2,2))
 				self._number_of_groups_present += 1
-				# print("Total groups: {}".format(self._number_of_groups_present))
-		# if (self._step == 0):
-		# 	self._groups_of_people[self._number_of_groups_present] = (0, 0, randint(2,2))
-		# 	self._number_of_groups_present += 1
 
 	def calculate_system_reward(self):
 		self._system_reward = 0

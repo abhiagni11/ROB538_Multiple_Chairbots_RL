@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from collections import namedtuple
 from itertools import count
 
+
 class ReplayMemory:
 
 	def __init__(self, capacity, Transition):

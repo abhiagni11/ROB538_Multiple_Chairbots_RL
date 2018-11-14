@@ -8,15 +8,15 @@ from itertools import count
 
 from DQN import *
 
+
 class Agent():
 
 	def __init__(self, number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, capacity):
 		self._number_of_tables = number_of_tables
 		self._number_of_agents = number_of_agents
 		self._max_number_of_groups = max_number_of_groups
-		self._Ny = grid_dim_y  # y grid size
-		self._Nx = grid_dim_x  # x grid size
-		self._action = 0  # x grid size
+		self._Ny = grid_dim_y
+		self._Nx = grid_dim_x
 		self._batch_size = batch_size
 		self._gamma = gamma
 		self._eps_start = eps_start
@@ -42,17 +42,14 @@ class Agent():
 		sample = random.random()
 		eps_threshold = self._eps_end + (self._eps_start - self._eps_end) * (math.exp(- 1 * steps_done / self._eps_decay))
 		if sample < eps_threshold:
-			# print('action_exploitation')
 			with torch.no_grad():
-				# return self._policy_net(self._state).max(1)[1].view(1, 1)
+
 				if len(policy_net_output.shape) <= 1:
 					_,action = torch.max(policy_net_output,0)
 					return action
 				else:
 					return policy_net_output.max(1)[1].view(1,1)
 		else:
-			# print('action_exploration')
-			# return torch.tensor([[random.randrange(2)]], device=device, dtype=torch.long)
 			return torch.tensor([[random.randrange(5)]], dtype=torch.double)
 
 	def optimize_model(self):
@@ -72,11 +69,6 @@ class Agent():
 			state_batch = torch.cat(batch.state)
 			action_batch = torch.cat(batch.action)
 			reward_batch = torch.cat(batch.reward)
-			
-			# action_batch = action_batch.double()
-
-			# print("action_batch: {}".format(action_batch))
-			# print('network_eval: {}'.format(self.policy_net_agent(state_batch)))
 			
 			state_action_values = self.policy_net_agent(state_batch).gather(1, action_batch)
 			next_state_values = torch.zeros(self._batch_size) 

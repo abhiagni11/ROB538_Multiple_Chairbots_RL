@@ -12,9 +12,6 @@ import matplotlib.pyplot as plt
 from collections import namedtuple
 from itertools import count
 
-# torch.set_default_tensor_type('torch.FloatTensor')
-torch.set_default_tensor_type('torch.DoubleTensor')
-
 import time
 import matplotlib.pyplot as plt
 from random import randint
@@ -27,6 +24,7 @@ from DQN import *
 
 
 def concatenate_state(all_tables, all_agents, all_groups_of_people):
+	
 	state = []
 	for elem, each_table in (all_tables.items()):
 		state.extend(each_table)
@@ -40,8 +38,9 @@ def concatenate_state(all_tables, all_agents, all_groups_of_people):
 
 if __name__ == "__main__":
 
-	number_of_tables = 3
-	number_of_agents = 3
+	torch.set_default_tensor_type('torch.DoubleTensor')
+	number_of_tables = 1
+	number_of_agents = 1
 	grid_dim_x = 5
 	grid_dim_y = 5
 	max_number_of_groups = 1
@@ -61,6 +60,10 @@ if __name__ == "__main__":
 	steps_done = 0
 
 	restaurant = Restaurant(number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, number_of_steps)
+
+	# uncomment this to start visualization
+	# restaurant.initialise_visualization()
+
 	all_the_agents = dict()
 
 
@@ -73,11 +76,9 @@ if __name__ == "__main__":
 		all_the_agents[elem].give_memory(ReplayMemory(capacity, Transition))
 
 	for training_loop in range(number_of_training_loops):
-		# print('training_loop',training_loop)
 		
 		for episode in range(number_of_episodes):
 
-			# print("episode",episode)
 			# reset the environment
 			restaurant.reset()
 
@@ -92,9 +93,9 @@ if __name__ == "__main__":
 				actions_of_all_agents = [0] * number_of_agents
 				actions_of_all_agents = np.asarray(actions_of_all_agents)
 				for elem, each_agent in all_the_agents.items():
-					# actions_of_all_agents[elem] = randint(0,4)
+
 					policy_net_output = each_agent.policy_net_agent(torch.from_numpy(state))
-					# print("elem is {} and policy_net_agent is {}".format(elem, policy_net_output))
+
 					action_temp = each_agent.get_action(policy_net_output, steps_done)
 
 					actions_of_all_agents[elem] = action_temp.numpy()
@@ -113,8 +114,6 @@ if __name__ == "__main__":
 				system_reward = np.asarray(system_reward,dtype=float)
 				episode_successes = restaurant.get_sucessess()
 				
-				# print('state',state)
-				# print('actions_of_all_agents]0',np.asarray([actions_of_all_agents[0]],dtype=float))
 				for elem, each_agent in all_the_agents.items():
 					all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]],dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
 
@@ -125,7 +124,7 @@ if __name__ == "__main__":
 				# time.sleep(0.001)
 
 			if episode % 1 == 0: 
-				# print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
+				print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
 				plot_rewards.append(episode_reward)        
 				plot_successes.append(episode_successes)
 				plot_N += 1     
@@ -151,7 +150,6 @@ if __name__ == "__main__":
 	ax.set_ylabel('System reward in each episode')
 	plt.plot(plot_N, plot_rewards, 'm-', label='Rewards')
 	plt.legend()
-	# plt.tight_layout()
 	plt.show()
 
 	fig = plt.figure()
@@ -161,5 +159,4 @@ if __name__ == "__main__":
 	ax.set_ylabel('Successes in each episode')
 	plt.plot(plot_N, plot_successes, 'b-', label='Successes')
 	plt.legend()
-	# plt.tight_layout()
 	plt.show()
