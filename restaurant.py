@@ -145,9 +145,10 @@ class Restaurant:
 			# Agent just found a group, so it'll get +40 reward
 			self._agent_rewards[elem] += 40
 			# print("Found the group")
+		else:
+			self._agent_rewards[elem] -= 1
 		# Update the agent's reward in the dictionary
 		self._all_agents[elem] = (each_agent[2], each_agent[3], agent_state_next[0], agent_state_next[1], new_group_number)
-		
 
 	def update_group_location(self, group_number, location):
 		# Update the particular group's location
@@ -198,8 +199,8 @@ class Restaurant:
 	def get_observation(self):
 		return self._all_tables, self._all_agents, self._groups_of_people
 
-	def get_local_reward(self, agent):
-		None
+	def get_local_reward(self, agent_id):
+		return self._agent_rewards[agent_id]
 
 	def get_local_observation(self, agent):
 		None

@@ -39,8 +39,8 @@ def concatenate_state(all_tables, all_agents, all_groups_of_people):
 if __name__ == "__main__":
 
 	torch.set_default_tensor_type('torch.DoubleTensor')
-	number_of_tables = 1
-	number_of_agents = 1
+	number_of_tables = 2
+	number_of_agents = 2
 	grid_dim_x = 5
 	grid_dim_y = 5
 	max_number_of_groups = 1
@@ -48,12 +48,15 @@ if __name__ == "__main__":
 	number_of_episodes = 40
 	number_of_steps = 500
 
+	### eps_decay defines the rate of decay in exploration
+	## eps-decacy, gamma.;;	
+	
 	batch_size = 100
-	gamma = 0.9
+	gamma = 0.9 
 	eps_start = 0.9
 	eps_end = 0.05
 	eps_decay = 20000
-	capacity = 100000
+	capacity = 10000
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
@@ -115,7 +118,9 @@ if __name__ == "__main__":
 				episode_successes = restaurant.get_sucessess()
 				
 				for elem, each_agent in all_the_agents.items():
-					all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]],dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
+					agent_reward = restaurant.get_local_reward(elem)
+					agent_reward = np.asarray(agent_reward, dtype=float)
+					all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(agent_reward).unsqueeze(0))
 
 				# modify state for the next step
 				state = next_state
@@ -123,11 +128,11 @@ if __name__ == "__main__":
 				# restaurant.visualize_restaurant()
 				# time.sleep(0.001)
 
-			if episode % 1 == 0: 
-				print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
-				plot_rewards.append(episode_reward)        
-				plot_successes.append(episode_successes)
-				plot_N += 1     
+			# if episode % 20 == 0: 
+				# print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
+			plot_rewards.append(episode_reward)        
+			plot_successes.append(episode_successes)
+			plot_N += 1     
 
 		# optimize_model()
 		for elem, each_agent in all_the_agents.items():
@@ -136,7 +141,6 @@ if __name__ == "__main__":
 	for elem, each_agent in all_the_agents.items():
 		model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
 		torch.save(each_agent.policy_net_agent.state_dict(), model_path)
-
 
 	plot_N = list(range(plot_N))
 
