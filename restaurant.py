@@ -181,10 +181,15 @@ class Restaurant:
 	def add_new_group_of_people(self):
 		iter_step = self._number_of_steps/100
 		while self._number_of_groups_present < self._max_number_of_groups:
-			if ((self._step < (iter_step * 10)) and (self._step % iter_step == 0)):
-				self._groups_of_people[self._number_of_groups_present] = (self._Nx/2, 0, randint(2,2))
-				self._number_of_groups_present += 1
+			# if ((self._step < (iter_step * 10)) and (self._step % iter_step == 0)):
+			self._groups_of_people[self._number_of_groups_present] = (self._Nx/2, 0, randint(2,2))
+			self._number_of_groups_present += 1
 
+	def calculate_system_reward(self):
+		self._system_reward = 0
+		for reward in self._agent_rewards:
+			self._system_reward += reward
+			
 	def calculate_system_reward(self):
 		self._system_reward = 0
 		for reward in self._agent_rewards:

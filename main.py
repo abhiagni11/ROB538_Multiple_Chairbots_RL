@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn.init as init
+from tensorboardX import SummaryWriter
 
 import math
 import random
@@ -13,6 +14,7 @@ from collections import namedtuple
 from itertools import count
 
 import time
+from datetime import datetime
 import matplotlib.pyplot as plt
 from random import randint
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -43,8 +45,8 @@ if __name__ == "__main__":
 	number_of_agents = 2
 	grid_dim_x = 5
 	grid_dim_y = 5
-	max_number_of_groups = 1
-	number_of_training_loops = 20
+	max_number_of_groups = 3
+	number_of_training_loops = 10
 	number_of_episodes = 40
 	number_of_steps = 500
 
@@ -52,11 +54,13 @@ if __name__ == "__main__":
 	## eps-decacy, gamma.;;	
 	
 	batch_size = 100
-	gamma = 0.9 
+	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.05
 	eps_decay = 20000
 	capacity = 10000
+	learning_rate = 1e-4
+	weight_decay = 0
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
@@ -73,9 +77,14 @@ if __name__ == "__main__":
 	plot_rewards = []    
 	plot_successes = []
 	plot_N = 0
-
+	
+	dt = datetime.now()
+	dt_round_microsec = round(dt.microsecond/1000)
+	filename = 'runs/ChairBot_DQN_' + str(number_of_agents) + '_agents_and_' + str(max_number_of_groups) + '_groups_in_' + str(grid_dim_x) + '_X_' + str(grid_dim_y) + '_in_' + str(number_of_training_loops) + '_training_loops' + str(dt_round_microsec)
+	tensorboard_writer = SummaryWriter(filename)
+	
 	for elem in range(number_of_agents):
-		all_the_agents[elem] = Agent(number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, capacity)
+		all_the_agents[elem] = Agent(number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, learning_rate, weight_decay, capacity)
 		all_the_agents[elem].give_memory(ReplayMemory(capacity, Transition))
 
 	for training_loop in range(number_of_training_loops):
@@ -117,6 +126,8 @@ if __name__ == "__main__":
 				system_reward = np.asarray(system_reward,dtype=float)
 				episode_successes = restaurant.get_sucessess()
 				
+
+
 				for elem, each_agent in all_the_agents.items():
 					agent_reward = restaurant.get_local_reward(elem)
 					agent_reward = np.asarray(agent_reward, dtype=float)
@@ -128,39 +139,47 @@ if __name__ == "__main__":
 				# restaurant.visualize_restaurant()
 				# time.sleep(0.001)
 
-			# if episode % 20 == 0: 
-				# print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
+			# if episode % (number_of_episodes-1) == 0: 
+			# 	print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
 			plot_rewards.append(episode_reward)        
 			plot_successes.append(episode_successes)
-			plot_N += 1     
+			plot_N += 1    
+
+			n_iter = number_of_episodes * training_loop + episode
+			tensorboard_writer.add_scalar('data/rewards', episode_reward, n_iter)
+			tensorboard_writer.add_scalar('data/successes', episode_successes, n_iter)
 
 		# optimize_model()
 		for elem, each_agent in all_the_agents.items():
 			all_the_agents[elem].optimize_model()
 	
+	tensorboard_writer.export_scalars_to_json("./all_scalars.json")
+	tensorboard_writer.close()
+
 	for elem, each_agent in all_the_agents.items():
 		model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
 		torch.save(each_agent.policy_net_agent.state_dict(), model_path)
 
-	plot_N = list(range(plot_N))
+	# plot_N = list(range(plot_N))
 
-	plot_reward_text = "Plotting rewards over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
-	plot_successes_text = "Plotting successes over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
+	# plot_reward_text = "Plotting rewards over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
+	# plot_successes_text = "Plotting successes over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
 
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.set_title(plot_reward_text)
-	ax.set_xlabel('Number of episodes')
-	ax.set_ylabel('System reward in each episode')
-	plt.plot(plot_N, plot_rewards, 'm-', label='Rewards')
-	plt.legend()
-	plt.show()
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111)
+	# ax.set_title(plot_reward_text)
+	# ax.set_xlabel('Number of episodes')
+	# ax.set_ylabel('System reward in each episode')
+	# plt.plot(plot_N, plot_rewards, 'm-', label='Rewards')
+	# plt.legend()
+	# plt.show()
 
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.set_title(plot_successes_text)
-	ax.set_xlabel('Number of episodes')
-	ax.set_ylabel('Successes in each episode')
-	plt.plot(plot_N, plot_successes, 'b-', label='Successes')
-	plt.legend()
-	plt.show()
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111)
+	# ax.set_title(plot_successes_text)
+	# ax.set_xlabel('Number of episodes')
+	# ax.set_ylabel('Successes in each episode')
+	# plt.plot(plot_N, plot_successes, 'b-', label='Successes')
+	# plt.legend()
+	# plt.show()
+

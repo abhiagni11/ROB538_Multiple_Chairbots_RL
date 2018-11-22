@@ -11,7 +11,7 @@ from DQN import *
 
 class Agent():
 
-	def __init__(self, number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, capacity):
+	def __init__(self, number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, lr, weight_decay, capacity):
 		self._number_of_tables = number_of_tables
 		self._number_of_agents = number_of_agents
 		self._max_number_of_groups = max_number_of_groups
@@ -23,6 +23,8 @@ class Agent():
 		self._eps_end = eps_end
 		self._eps_decay = eps_decay
 		self._capacity = capacity
+		self._lr = lr
+		self._weight_decay = weight_decay
 		self._state_dim = 3 * self._number_of_tables + 5 * self._number_of_agents + 3 * self._max_number_of_groups
 		self.initialize_policies()
 
@@ -33,7 +35,7 @@ class Agent():
 		self.target_net_agent = DQN(n_feature = self._state_dim)
 		self.target_net_agent.double()
 		self.target_net_agent.load_state_dict(self.policy_net_agent.state_dict())
-		self.optimizer_agent = optim.RMSprop(self.policy_net_agent.parameters(),lr=1e-4)
+		self.optimizer_agent = optim.RMSprop(self.policy_net_agent.parameters(), lr = self._lr, weight_decay = self._weight_decay)
 
 	def give_memory(self, memory):
 		self.memory = memory
