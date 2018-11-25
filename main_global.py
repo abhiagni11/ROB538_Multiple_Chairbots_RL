@@ -47,7 +47,7 @@ if __name__ == "__main__":
 	grid_dim_x = 5
 	grid_dim_y = 5
 	max_number_of_groups = 2
-	number_of_training_loops = 50
+	number_of_training_loops = 10
 	number_of_episodes = 40
 	number_of_steps = 300
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 	eps_decay = 200000
 	capacity = 100000
 	learning_rate = 1e-3
-	weight_decay = 0
+	weight_decay = 1e-4
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
@@ -92,18 +92,16 @@ if __name__ == "__main__":
 	print(all_the_agents)
 
 
-	# global_agent_vdn_init = Agent(
+
 	global_agent_vdn = global_agent()
 
 	overall_memory = ReplayMemory(capacity,Transition)
 	global_agent_vdn.give_memory(overall_memory)
 
 	global_agent_vdn.all_the_agents = all_the_agents
-
 	global_agent_vdn.initialize_hyperparam()
 
 	for training_loop in range(number_of_training_loops):
-		
 		for episode in range(number_of_episodes):
 
 			# reset the environment
@@ -120,13 +118,14 @@ if __name__ == "__main__":
 				actions_of_all_agents = [0] * number_of_agents
 				actions_of_all_agents = np.asarray(actions_of_all_agents)
 				for elem, each_agent in all_the_agents.items():
-
 					policy_net_output = each_agent.policy_net_agent(torch.from_numpy(state))
-
 					action_temp = each_agent.get_action(policy_net_output, steps_done)
-
+					# print('action_temp \n',action_temp)
 					actions_of_all_agents[elem] = action_temp.numpy()
-			
+				
+				print('actions_of_all_agents')
+				print(actions_of_all_agents)
+				
 				restaurant.step(actions_of_all_agents)
 				steps_done += 1
 				
@@ -156,23 +155,22 @@ if __name__ == "__main__":
 				# restaurant.visualize_restaurant()
 				# time.sleep(0.001)
 
-			if episode % (number_of_episodes-1) == 0: 
+			if episode % 10 == 0: 
 				print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
 	
-			plot_rewards.append(episode_reward)        
-			plot_successes.append(episode_successes)
-			plot_N += 1    
+			# plot_rewards.append(episode_reward)        
+			# plot_successes.append(episode_successes)
+			# plot_N += 1    
 
 			# n_iter = number_of_episodes * training_loop + episode
 			# tensorboard_writer.add_scalar('data/rewards', episode_reward, n_iter)
 			# tensorboard_writer.add_scalar('data/successes', episode_successes, n_iter)
 
 		# optimize_model()
-		# for elem, each_agent in all_the_agents.items():
-		# 	all_the_agents[elem].optimize_model()
-		global_agent_vdn.optimize_model_global(batch_size,gamma)
-		for elem,each_agent in all_the_agents.items():
-			each_agent.target_net_agent.load_state_dict(each_agent.policy_net_agent.state_dict())
+		# global_agent_vdn.optimize_model_global(batch_size,gamma)
+		
+		# for elem,each_agent in all_the_agents.items():
+		# 	each_agent.target_net_agent.load_state_dict(each_agent.policy_net_agent.state_dict())
 
 
 	# tensorboard_writer.export_scalars_to_json("./all_scalars.json")
