@@ -21,7 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import colors
 
 from restaurant import *
-from agent import *
+from agent_global import *
 from DQN import *
 
 
@@ -46,24 +46,25 @@ if __name__ == "__main__":
 	grid_dim_x = 5
 	grid_dim_y = 5
 	max_number_of_groups = 3
-	number_of_training_loops = 20
-	number_of_episodes = 40
-	number_of_steps = 250
+	number_of_training_loops = 5
+	number_of_episodes = 4
+	number_of_steps = 25
 
-	## eps_decay defines the rate of decay in exploration
+	### eps_decay defines the rate of decay in exploration
 	## eps-decacy, gamma.;;	
 	
-	batch_size = 200
+	batch_size = 100
 	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.05
-	eps_decay = 300000
+	eps_decay = 350000
 	capacity = 100000
-	learning_rate = 5*1e-4
+	learning_rate = 1e-3
 	weight_decay = 1e-4
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
+	steps_done = 0
 
 	restaurant = Restaurant(number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, number_of_steps)
 
@@ -77,7 +78,7 @@ if __name__ == "__main__":
 	plot_successes = []
 	plot_N = 0
 	
-	number_of_stat_runs = 10
+	number_of_stat_runs = 2
 
 	stat_n_iter = list()
 	all_stat_system_rewards = list()
@@ -96,11 +97,16 @@ if __name__ == "__main__":
 
 		for elem in range(number_of_agents):
 			all_the_agents[elem] = Agent(number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, learning_rate, weight_decay, capacity)
-			all_the_agents[elem].give_memory(ReplayMemory(capacity, Transition))
-			all_the_agents[elem].initialize_policies()
+			# all_the_agents[elem].give_memory(ReplayMemory(capacity, Transition))
+
+		global_agent_vdn = global_agent()
+		overall_memory = ReplayMemory(capacity,Transition)
+		global_agent_vdn.give_memory(overall_memory)
+		global_agent_vdn.all_the_agents = all_the_agents
+		global_agent_vdn.initialize_hyperparam()
 
 		for training_loop in range(number_of_training_loops):
-			
+
 			for episode in range(number_of_episodes):
 
 				# reset the environment
@@ -120,13 +126,14 @@ if __name__ == "__main__":
 					actions_of_all_agents = [0] * number_of_agents
 					actions_of_all_agents = np.asarray(actions_of_all_agents)
 					for elem, each_agent in all_the_agents.items():
-
 						policy_net_output = each_agent.policy_net_agent(torch.from_numpy(state))
-
 						action_temp = each_agent.get_action(policy_net_output, steps_done)
-
+						# print('action_temp \n',actions_of_all_agentstemp)
 						actions_of_all_agents[elem] = action_temp.numpy()
-				
+					
+					# print('actions_of_all_agents')
+					# print(actions_of_all_agents)
+					
 					restaurant.step(actions_of_all_agents)
 					steps_done += 1
 					
@@ -147,27 +154,31 @@ if __name__ == "__main__":
 						agent_wise_rewards[elem] += agent_reward
 						agent_success = restaurant.get_agent_sucessess(elem)
 						agent_wise_successes[elem] = agent_success
+						# difference_reward = restaurant.get_difference_reward(elem)
+						# agent_reward = np.asarray(agent_reward, dtype=float)
+						# difference_reward = np.asarray(difference_reward, dtype=float)
+						# all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
 
-						difference_reward = restaurant.get_difference_reward(elem)
-						agent_reward = np.asarray(agent_reward, dtype=float)
-						difference_reward = np.asarray(difference_reward, dtype=float)
-						all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
+					overall_memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
 
 					# modify state for the next step
 					state = next_state
+
 					# restaurant.visualize_restaurant()
 					# time.sleep(0.001)
 
 				# if episode % 10 == 0: 
-				# 	print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))    
+				# 	print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
+		
+				# plot_rewards.append(episode_reward)        
+				# plot_successes.append(episode_successes)
+				# plot_N += 1    
 
 				n_iter = number_of_episodes * training_loop + episode
 
 				stat_system_rewards.append(episode_reward)
 				stat_system_successes.append(episode_successes)
 
-				# print('stat_run: {} ; episode_reward: {} ; stat_reward: {}'.format(stat_run, episode_reward, stat_system_rewards[stat_run][n_iter]))
-				
 				if not stat_run:
 					stat_n_iter.append(n_iter)
 
@@ -178,8 +189,9 @@ if __name__ == "__main__":
 					stat_agent_successes[elem].append(agent_success)
 
 			# optimize_model()
-			for elem, each_agent in all_the_agents.items():
-				all_the_agents[elem].optimize_model()
+			global_agent_vdn.optimize_model_global(batch_size,gamma)
+			
+			for elem,each_agent in all_the_agents.items():
 				each_agent.target_net_agent.load_state_dict(each_agent.policy_net_agent.state_dict())
 
 		all_stat_system_rewards.append(stat_system_rewards)
@@ -220,7 +232,7 @@ if __name__ == "__main__":
 	dt_round_microsec = round(dt.microsecond/1000)
 	# dt_round_microsec = dt
 	# filename = 'runs/ChairBot_DQN_' + str(number_of_agents) + '_agents_and_' + str(max_number_of_groups) + '_groups_in_' + str(grid_dim_x) + '_X_' + str(grid_dim_y) + '_in_' + str(number_of_training_loops) + '_training_loops' + str(dt_round_microsec)
-	filename = './runs/ChairBot_IQL_' + str(dt_round_microsec)
+	filename = './runs/ChairBot_VDN_' + str(dt_round_microsec)
 
 	tensorboard_writer = SummaryWriter(filename)
 	
@@ -240,7 +252,6 @@ if __name__ == "__main__":
 	tensorboard_writer.add_text('hyper-params/learning_rate', str(learning_rate))
 	tensorboard_writer.add_text('hyper-params/weight_decay', str(weight_decay))
 
-
 	for n_iter in stat_n_iter:
 		tensorboard_writer.add_scalar('system/rewards', new_average_of_system_rewards[n_iter], n_iter)
 		tensorboard_writer.add_scalar('system/successes', new_average_of_system_successes[n_iter], n_iter)
@@ -250,14 +261,20 @@ if __name__ == "__main__":
 
 	for elem, each_agent in all_the_agents.items():
 		model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
+		# model_path = '/home/risheek/Pytorch_workspace/dqn_'+ str(elem)
 		torch.save(each_agent.policy_net_agent.state_dict(), model_path)
 
 	tensorboard_writer.export_scalars_to_json("./all_scalars.json")
 	tensorboard_writer.close()
 
-	# plot_rewards.append(episode_reward)        
-	# plot_successes.append(episode_successes)
-	# plot_N += 1
+	print("all_stat_system_rewards: {}".format(all_stat_system_rewards))
+	a =  np.array(all_stat_system_rewards)
+	mean_a = np.mean(a, axis=0)
+	var_a = np.var(a, axis=0)
+	std_a = np.std(a, axis=0)
+	print("all_stat_system_rewards Mean: {}".format(mean_a))
+	print("all_stat_system_rewards Var: {}".format(var_a))
+	print("all_stat_system_rewards Std: {}".format(std_a))
 
 	# plot_N = list(range(plot_N))
 
