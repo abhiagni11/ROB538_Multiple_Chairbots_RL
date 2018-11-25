@@ -35,6 +35,7 @@ class Restaurant:
 		self.fig, self.ax = plt.subplots()
 		self._grid_viz = [[0 for x in range(self._Nx + 2)] for x in range(self._Ny + 2)]
 		self._successes = 0
+		self._each_agent_successes = 0
 
 	def initialise_tables(self):
 		if self._number_of_tables == 1:
@@ -76,6 +77,7 @@ class Restaurant:
 	def reset(self):
 		self._step = 0
 		self._successes = 0
+		self._each_agent_successes = [0] * self._number_of_agents
 		self._all_tables.clear()
 		self._all_agents.clear()
 		self._groups_of_people.clear()
@@ -137,6 +139,7 @@ class Restaurant:
 				self._all_agents[elem][-1] = -1
 				new_group_number = -1
 				self._successes += 1
+				self._each_agent_successes[elem] += 1
 		else:
 			# check if it just stumbled into a group or not
 			group_number = self.check_agent_found_group(agent_state_next)
@@ -201,10 +204,16 @@ class Restaurant:
 	def get_sucessess(self):
 		return self._successes
 
+	def get_agent_sucessess(self, agent_id):
+		return self._each_agent_successes[agent_id]
+
 	def get_observation(self):
 		return self._all_tables, self._all_agents, self._groups_of_people
 
 	def get_local_reward(self, agent_id):
+		return self._agent_rewards[agent_id]
+
+	def get_difference_reward(self, agent_id):
 		return self._agent_rewards[agent_id]
 
 	def get_local_observation(self, agent):

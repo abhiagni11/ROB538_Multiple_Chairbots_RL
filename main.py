@@ -46,21 +46,46 @@ if __name__ == "__main__":
 	grid_dim_x = 5
 	grid_dim_y = 5
 	max_number_of_groups = 3
-	number_of_training_loops = 10
+	number_of_training_loops = 20
 	number_of_episodes = 40
-	number_of_steps = 500
+	number_of_steps = 250
 
-	### eps_decay defines the rate of decay in exploration
+	## eps_decay defines the rate of decay in exploration
 	## eps-decacy, gamma.;;	
 	
-	batch_size = 100
+	batch_size = 200
 	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.05
-	eps_decay = 20000
-	capacity = 10000
-	learning_rate = 1e-4
+	eps_decay = 300000
+	capacity = 100000
+	learning_rate = 1e-3
 	weight_decay = 0
+
+	# Tensorboard
+	dt = datetime.now()
+	dt_round_microsec = round(dt.microsecond/1000)
+	# dt_round_microsec = dt
+	# filename = 'runs/ChairBot_DQN_' + str(number_of_agents) + '_agents_and_' + str(max_number_of_groups) + '_groups_in_' + str(grid_dim_x) + '_X_' + str(grid_dim_y) + '_in_' + str(number_of_training_loops) + '_training_loops' + str(dt_round_microsec)
+	filename = './runs/ChairBot_DQN_' + str(dt_round_microsec)
+	tensorboard_writer = SummaryWriter(filename)
+	
+	tensorboard_writer.add_text('env-params/number_of_tables', str(number_of_tables))
+	tensorboard_writer.add_text('env-params/number_of_agents', str(number_of_agents))
+	tensorboard_writer.add_text('env-params/grid_dim_x', str(grid_dim_x))
+	tensorboard_writer.add_text('env-params/grid_dim_y', str(grid_dim_y))
+	tensorboard_writer.add_text('env-params/max_number_of_groups', str(max_number_of_groups))
+	tensorboard_writer.add_text('env-params/number_of_training_loops', str(number_of_training_loops))
+	tensorboard_writer.add_text('env-params/number_of_episodes', str(number_of_episodes))
+	tensorboard_writer.add_text('env-params/number_of_steps', str(number_of_steps))
+	tensorboard_writer.add_text('hyper-params/batch_size', str(batch_size))
+	tensorboard_writer.add_text('hyper-params/gamma', str(gamma))
+	tensorboard_writer.add_text('hyper-params/eps_start', str(eps_start))
+	tensorboard_writer.add_text('hyper-params/eps_end', str(eps_end))
+	tensorboard_writer.add_text('hyper-params/eps_decay', str(eps_decay))
+	tensorboard_writer.add_text('hyper-params/learning_rate', str(learning_rate))
+	tensorboard_writer.add_text('hyper-params/weight_decay', str(weight_decay))
+
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
@@ -78,10 +103,6 @@ if __name__ == "__main__":
 	plot_successes = []
 	plot_N = 0
 	
-	dt = datetime.now()
-	dt_round_microsec = round(dt.microsecond/1000)
-	filename = 'runs/ChairBot_DQN_' + str(number_of_agents) + '_agents_and_' + str(max_number_of_groups) + '_groups_in_' + str(grid_dim_x) + '_X_' + str(grid_dim_y) + '_in_' + str(number_of_training_loops) + '_training_loops' + str(dt_round_microsec)
-	tensorboard_writer = SummaryWriter(filename)
 	
 	for elem in range(number_of_agents):
 		all_the_agents[elem] = Agent(number_of_tables, number_of_agents, max_number_of_groups, grid_dim_x, grid_dim_y, batch_size, gamma, eps_start, eps_end, eps_decay, learning_rate, weight_decay, capacity)
@@ -100,6 +121,9 @@ if __name__ == "__main__":
 			
 			episode_reward = 0
 			episode_successes = 0
+
+			agent_wise_rewards = [0] * number_of_agents
+			agent_wise_successes = [0] * number_of_agents
 			for each_step in range(number_of_steps):
 
 				actions_of_all_agents = [0] * number_of_agents
@@ -125,13 +149,16 @@ if __name__ == "__main__":
 				
 				system_reward = np.asarray(system_reward,dtype=float)
 				episode_successes = restaurant.get_sucessess()
-				
-
 
 				for elem, each_agent in all_the_agents.items():
 					agent_reward = restaurant.get_local_reward(elem)
+					agent_wise_rewards[elem] = agent_reward
+					agent_success = restaurant.get_agent_sucessess(elem)
+					agent_wise_successes[elem] = agent_success
+					difference_reward = restaurant.get_difference_reward(elem)
 					agent_reward = np.asarray(agent_reward, dtype=float)
-					all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(agent_reward).unsqueeze(0))
+					difference_reward = np.asarray(difference_reward, dtype=float)
+					all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
 
 				# modify state for the next step
 				state = next_state
@@ -139,19 +166,23 @@ if __name__ == "__main__":
 				# restaurant.visualize_restaurant()
 				# time.sleep(0.001)
 
-			# if episode % (number_of_episodes-1) == 0: 
+			# if episode % 10 == 0: 
 			# 	print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))
 			plot_rewards.append(episode_reward)        
 			plot_successes.append(episode_successes)
 			plot_N += 1    
 
 			n_iter = number_of_episodes * training_loop + episode
-			tensorboard_writer.add_scalar('data/rewards', episode_reward, n_iter)
-			tensorboard_writer.add_scalar('data/successes', episode_successes, n_iter)
+			tensorboard_writer.add_scalar('system/rewards', episode_reward, n_iter)
+			tensorboard_writer.add_scalar('system/successes', episode_successes, n_iter)
+			for elem in range(number_of_agents):
+				tensorboard_writer.add_scalar('agent' +str(elem) +'/rewards', agent_wise_rewards[elem], n_iter)
+				tensorboard_writer.add_scalar('agent' +str(elem) +'/successes', agent_wise_successes[elem], n_iter)
 
 		# optimize_model()
 		for elem, each_agent in all_the_agents.items():
 			all_the_agents[elem].optimize_model()
+			each_agent.target_net_agent.load_state_dict(each_agent.policy_net_agent.state_dict())
 	
 	tensorboard_writer.export_scalars_to_json("./all_scalars.json")
 	tensorboard_writer.close()
