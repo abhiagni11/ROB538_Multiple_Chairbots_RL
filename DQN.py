@@ -50,11 +50,7 @@ class DQN(nn.Module):
 		init.xavier_normal(self.hidden.weight, gain=np.sqrt(2))
 		self.dropout= torch.nn.Dropout(p=0.3)
 
-		self.hidden_1=torch.nn.Linear(self.n_hidden, self.n_hidden_1)
-		init.xavier_normal(self.hidden_1.weight, gain=np.sqrt(2))
-		self.dropout_1= torch.nn.Dropout(p=0.3)
-
-		self.predict=torch.nn.Linear(self.n_hidden_1, self.n_output)
+		self.predict=torch.nn.Linear(self.n_hidden, self.n_output)
 	
 		init.xavier_normal(self.predict.weight, gain=np.sqrt(2))
 		self.sigmoid=torch.nn.Sigmoid()
@@ -62,6 +58,5 @@ class DQN(nn.Module):
 	def forward(self, x):
 		x=F.relu(self.hidden(x)) 
 		x=self.dropout(x)      
-		x=F.relu(self.hidden_1(x))
 		x=self.predict(x)
 		return x
