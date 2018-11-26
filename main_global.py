@@ -5,8 +5,7 @@ import torch.nn.functional as F
 import torch.nn.init as init
 # from tensorboardX import SummaryWriter
 
-import math
-import os
+import math, os
 import random
 import numpy as np
 import matplotlib
@@ -43,23 +42,24 @@ def smooth(y, box_pts):
 	return y_smooth
 
 if __name__ == "__main__":
-	torch.set_default_tensor_type('torch.DoubleTensor')
-	number_of_tables = 2
-	number_of_agents = 2
-	grid_dim_x = 5
-	grid_dim_y = 5
-	max_number_of_groups = 3
-	number_of_training_loops = 2
-	number_of_episodes = 4
-	number_of_steps = 25
-	number_of_stat_runs = 10
 
-	batch_size = 100
+	torch.set_default_tensor_type('torch.DoubleTensor')
+	number_of_tables = 6
+	number_of_agents = 6
+	grid_dim_x = 8
+	grid_dim_y = 8
+	max_number_of_groups = 6
+	number_of_training_loops = 40
+	number_of_episodes = 40
+	number_of_steps = 300
+	number_of_stat_runs = 1
+
+	batch_size = 200
 	gamma = 0.9
 	eps_start = 0.9
-	eps_end = 0.05
-	eps_decay = 150000
-	capacity = 100000
+	eps_end = 0.0
+	eps_decay =48000
+	capacity = 200000
 	learning_rate = 1e-3
 	weight_decay = 1e-4
 
@@ -229,11 +229,8 @@ if __name__ == "__main__":
 	########## SAVE THE MODEL ##########
 	####################################
 
-	# for elem, each_agent in all_the_agents.items():
-	# 	model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
-	# 	# model_path = '/home/risheek/Pytorch_workspace/dqn_'+ str(elem)
-	# 	torch.save(each_agent.policy_net_agent.state_dict(), model_path)
-
+	for elem, each_agent in all_the_agents.items():
+		torch.save(each_agent.policy_net_agent.state_dict(), net_folder_dir + 'model_of_agent_' + str(elem))
 
 	#####################################
 	########## IGNORE ALL THIS ##########

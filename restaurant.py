@@ -38,10 +38,12 @@ class Restaurant:
 		self._each_agent_successes = 0
 
 	def initialise_tables(self):
-		if self._number_of_tables == 0:
-			table_locations = [(1.,1.)]
-		# elif self._number_of_tables == 2:
-		# 	table_locations = [(1.,1.),(1.,3.)]
+		if self._number_of_tables == 2:
+			table_locations = [(1.,1.),(1.,3.)]
+		elif self._number_of_tables == 6:
+			table_locations = [(1.,1.),(1.,3.),(3.,1.),(2.,4.),(4.,2.),(5.,5.)]
+		elif self._number_of_tables == 10:
+			table_locations = [(1.,1.),(1.,3.),(3.,1.),(2.,4.),(4.,2.),(6.,5.),(5.,6.),(7.,6.),(6.,2.),(5.,4.)]
 		# elif self._number_of_tables == 3:
 		# 	table_locations = [(1.,1.),(1.,3.),(3.,1.)]
 		else:
@@ -53,10 +55,10 @@ class Restaurant:
 				remainder += 1 
 			ky = ((int(self._number_of_tables / K)) + remainder)
 			for y in np.arange(0 , self._Ny, ky):
-				# print(table_locations)
 				for x in np.arange(0, self._Nx, kx):
 					table_locations.append((float(int(x)), (float(int(y)))))
-
+			
+		# print(table_locations,self._Nx/2, 0)
 		for elem in range(self._number_of_tables):
 			self._all_tables[elem] = (table_locations[elem][0], table_locations[elem][1], randint(2,2))
 

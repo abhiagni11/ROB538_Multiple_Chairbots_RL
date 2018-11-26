@@ -51,6 +51,9 @@ if __name__ == "__main__":
 
 	##################################################################################
 
+	smoothening_factor = 8
+
+
 	plot_reward_text = "Global VS Diff"
 
 	fig = plt.figure()
@@ -58,8 +61,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_reward_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System reward')
-
-	smoothening_factor = 1
 
 	# Plot IQL for difference rewards
 	plt.plot(stat_n_iter_IQL_diff, smooth(IQL_diff_stat_system_rewards_mean,smoothening_factor), 'k', label='IQL_D', color='#CC4F1B')
@@ -72,7 +73,8 @@ if __name__ == "__main__":
 		alpha=0.5, edgecolor='#1B2ACC', facecolor='#089FFF')
 
 	plt.legend()
-	plt.show()
+	# plt.show()
+	fig.savefig('Reward_IQL_G_vs_D.png')
 
 	plot_reward_text = "IQL VS VDN"
 
@@ -81,8 +83,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_reward_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System reward')
-
-	smoothening_factor = 1
 
 	# Plot IQL for global rewards
 	plt.plot(stat_n_iter_IQL_global, smooth(IQL_global_stat_system_rewards_mean,smoothening_factor), 'k', label='IQL_G', color='#1B2ACC')
@@ -95,7 +95,9 @@ if __name__ == "__main__":
 		alpha=0.5, edgecolor='#3F7F4C', facecolor='#7EFF99')
 
 	plt.legend()
-	plt.show()
+	# plt.show()
+
+	fig.savefig('Reward_IQL_vs_VDN.png')
 	##################################################################################
 	
 	plot_successes_text = "Global VS Diff"
@@ -105,8 +107,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_successes_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System successes')
-
-	smoothening_factor = 1
 
 	# Plot IQL for difference rewards
 	plt.plot(stat_n_iter_IQL_diff, smooth(IQL_diff_system_successes_mean,smoothening_factor), 'm-', label='IQL_D', color='#CC4F1B')
@@ -119,7 +119,9 @@ if __name__ == "__main__":
 		alpha=0.5, edgecolor='#1B2ACC', facecolor='#089FFF')
 
 	plt.legend()
-	plt.show()
+	# plt.show()
+
+	fig.savefig('Successes_IQL_G_vs_D.png')
 
 	plot_successes_text = "Global VS Diff"
 
@@ -128,8 +130,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_successes_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System successes')
-
-	smoothening_factor = 1
 
 	# Plot IQL for global rewards
 	plt.plot(stat_n_iter_IQL_global, smooth(IQL_global_system_successes_mean,smoothening_factor), 'm-', label='IQL_G', color='#1B2ACC')
@@ -142,4 +142,6 @@ if __name__ == "__main__":
 		alpha=0.5, edgecolor='#3F7F4C', facecolor='#7EFF99')
 
 	plt.legend()
-	plt.show()
+	# plt.show()
+
+	fig.savefig('Successes_IQL_vs_VDN.png')

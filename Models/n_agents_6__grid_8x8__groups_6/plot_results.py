@@ -51,6 +51,9 @@ if __name__ == "__main__":
 
 	##################################################################################
 
+	smoothening_factor = 8
+
+
 	plot_reward_text = "Global VS Diff"
 
 	fig = plt.figure()
@@ -58,8 +61,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_reward_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System reward')
-
-	smoothening_factor = 1
 
 	# Plot IQL for difference rewards
 	plt.plot(stat_n_iter_IQL_diff, smooth(IQL_diff_stat_system_rewards_mean,smoothening_factor), 'k', label='IQL_D', color='#CC4F1B')
@@ -82,8 +83,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_reward_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System reward')
-
-	smoothening_factor = 1
 
 	# Plot IQL for global rewards
 	plt.plot(stat_n_iter_IQL_global, smooth(IQL_global_stat_system_rewards_mean,smoothening_factor), 'k', label='IQL_G', color='#1B2ACC')
@@ -109,8 +108,6 @@ if __name__ == "__main__":
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System successes')
 
-	smoothening_factor = 1
-
 	# Plot IQL for difference rewards
 	plt.plot(stat_n_iter_IQL_diff, smooth(IQL_diff_system_successes_mean,smoothening_factor), 'm-', label='IQL_D', color='#CC4F1B')
 	plt.fill_between(stat_n_iter_IQL_diff, smooth(IQL_diff_system_successes_mean-IQL_diff_system_successes_std_dev,smoothening_factor), smooth(IQL_diff_system_successes_mean+IQL_diff_system_successes_std_dev,smoothening_factor),
@@ -133,8 +130,6 @@ if __name__ == "__main__":
 	ax.set_title(plot_successes_text)
 	ax.set_xlabel('Number of episodes')
 	ax.set_ylabel('System successes')
-
-	smoothening_factor = 1
 
 	# Plot IQL for global rewards
 	plt.plot(stat_n_iter_IQL_global, smooth(IQL_global_system_successes_mean,smoothening_factor), 'm-', label='IQL_G', color='#1B2ACC')
