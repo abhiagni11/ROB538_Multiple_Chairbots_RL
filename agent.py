@@ -43,7 +43,7 @@ class Agent():
 	def get_action(self, policy_net_output, steps_done):
 		sample = random.random()
 		eps_threshold = self._eps_end + (self._eps_start - self._eps_end) * (math.exp(- 1 * steps_done / self._eps_decay))
-		if sample < eps_threshold:
+		if sample > eps_threshold:
 			with torch.no_grad():
 
 				if len(policy_net_output.shape) <= 1:

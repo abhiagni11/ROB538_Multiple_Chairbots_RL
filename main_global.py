@@ -37,6 +37,10 @@ def concatenate_state(all_tables, all_agents, all_groups_of_people):
 	state_array = np.array(state)
 	return state_array
 
+def smooth(y, box_pts):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='same')
+    return y_smooth
 
 if __name__ == "__main__":
 
@@ -46,9 +50,10 @@ if __name__ == "__main__":
 	grid_dim_x = 5
 	grid_dim_y = 5
 	max_number_of_groups = 3
-	number_of_training_loops = 5
-	number_of_episodes = 4
-	number_of_steps = 25
+	number_of_training_loops = 20
+	number_of_episodes = 40
+	number_of_steps = 250
+	number_of_stat_runs = 10
 
 	### eps_decay defines the rate of decay in exploration
 	## eps-decacy, gamma.;;	
@@ -57,7 +62,7 @@ if __name__ == "__main__":
 	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.05
-	eps_decay = 350000
+	eps_decay = 150000
 	capacity = 100000
 	learning_rate = 1e-3
 	weight_decay = 1e-4
@@ -78,7 +83,6 @@ if __name__ == "__main__":
 	plot_successes = []
 	plot_N = 0
 	
-	number_of_stat_runs = 2
 
 	stat_n_iter = list()
 	all_stat_system_rewards = list()
@@ -191,8 +195,8 @@ if __name__ == "__main__":
 			# optimize_model()
 			global_agent_vdn.optimize_model_global(batch_size,gamma)
 			
-			for elem,each_agent in all_the_agents.items():
-				each_agent.target_net_agent.load_state_dict(each_agent.policy_net_agent.state_dict())
+			# for elem,each_agent in all_the_agents.items():
+				# each_agent.target_net_agent.load_state_dict(each_agent.policy_net_agent.state_dict())
 
 		all_stat_system_rewards.append(stat_system_rewards)
 		all_stat_system_successes.append(stat_system_successes)
@@ -267,28 +271,38 @@ if __name__ == "__main__":
 	tensorboard_writer.export_scalars_to_json("./all_scalars.json")
 	tensorboard_writer.close()
 
-	print("all_stat_system_rewards: {}".format(all_stat_system_rewards))
+	# print("all_stat_system_rewards: {}".format(all_stat_system_rewards))
 	a =  np.array(all_stat_system_rewards)
 	mean_a = np.mean(a, axis=0)
 	var_a = np.var(a, axis=0)
 	std_a = np.std(a, axis=0)
-	print("all_stat_system_rewards Mean: {}".format(mean_a))
-	print("all_stat_system_rewards Var: {}".format(var_a))
-	print("all_stat_system_rewards Std: {}".format(std_a))
+	# print("all_stat_system_rewards Mean: {}".format(mean_a))
+	# print("all_stat_system_rewards Var: {}".format(var_a))
+	# print("all_stat_system_rewards Std: {}".format(std_a))
 
-	# plot_N = list(range(plot_N))
+	plot_N = list(range(plot_N))
 
-	# plot_reward_text = "Plotting rewards over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
-	# plot_successes_text = "Plotting successes over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
+	plot_reward_text = "Plotting rewards over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
+	plot_successes_text = "Plotting successes over all the episodes | For " + str(number_of_agents) + " chairbot in 5X5 env"
 
-	# fig = plt.figure()
-	# ax = fig.add_subplot(111)
-	# ax.set_title(plot_reward_text)
-	# ax.set_xlabel('Number of episodes')
-	# ax.set_ylabel('System reward in each episode')
-	# plt.plot(plot_N, plot_rewards, 'm-', label='Rewards')
-	# plt.legend()
-	# plt.show()
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	ax.set_title(plot_reward_text)
+	ax.set_xlabel('Number of episodes')
+	ax.set_ylabel('System reward in each episode')
+
+	x = np.linspace(0, 30, 30)
+	y = np.sin(x/6*np.pi)
+	error = np.random.normal(0.1, 0.02, size=y.shape) +.1
+	y += np.random.normal(0, 0.1, size=y.shape)
+
+	# plt.plot(x, y, 'k', color='#CC4F1B')
+
+	plt.plot(stat_n_iter, mean_a, 'm-', label='Rewards', color='#1B2ACC')
+	plt.fill_between(stat_n_iter, mean_a-std_a, mean_a+std_a,
+	    alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+	plt.legend()
+	plt.show()
 
 	# fig = plt.figure()
 	# ax = fig.add_subplot(111)
