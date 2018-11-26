@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.nn.init as init
 # from tensorboardX import SummaryWriter
 
-import math
+import math, os
 import random
 import numpy as np
 import matplotlib
@@ -46,12 +46,12 @@ if __name__ == "__main__":
 	torch.set_default_tensor_type('torch.DoubleTensor')
 	number_of_tables = 2
 	number_of_agents = 2
-	grid_dim_x = 5
-	grid_dim_y = 5
+	grid_dim_x = 4
+	grid_dim_y = 4
 	max_number_of_groups = 3
-	number_of_training_loops = 20
-	number_of_episodes = 40
-	number_of_steps = 250
+	number_of_training_loops = 2
+	number_of_episodes = 4
+	number_of_steps = 25
 	number_of_stat_runs = 10
 
 	batch_size = 100
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 	weight_decay = 1e-4
 
 	# Use this to toggle between global and difference rewards
-	Global_reward = False
+	Global_reward = True
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
@@ -188,12 +188,12 @@ if __name__ == "__main__":
 		all_stat_agent_rewards.append(stat_agent_rewards)
 		all_stat_agent_successes.append(stat_agent_successes)
 	
-	folder_save_config_in = '/Models/'
+	folder_save_config_in = 'Models/'
 	configuration_name = 'n_agents_' + str(number_of_agents) + '__grid_' + str(grid_dim_x) + 'x' + str(grid_dim_y) + '__groups_' + str(max_number_of_groups) + '/'
 	if Global_reward:
 		model_type = 'IQL_global/'
 	else:
-		model_type = 'IQL_local/'
+		model_type = 'IQL_diff/'
 	net_folder_dir = folder_save_config_in + configuration_name + model_type
 
 	################################################################
@@ -213,6 +213,27 @@ if __name__ == "__main__":
 	all_stat_agent_successes_std_dev = np.std(np.array(all_stat_agent_successes), axis=0)
 
 	stat_n_iter = np.array(stat_n_iter)
+
+	if not os.path.exists(os.path.dirname(net_folder_dir)):
+		try:
+			original_umask = os.umask(0)
+			os.makedirs(net_folder_dir, 0777)
+		finally:
+			os.umask(original_umask)
+
+	np.savetxt(net_folder_dir+'all_stat_system_rewards_mean', all_stat_system_rewards_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_system_rewards_std_dev', all_stat_system_rewards_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'all_stat_system_successes_mean', all_stat_system_successes_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_system_successes_std_dev', all_stat_system_successes_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'all_stat_agent_rewards_mean', all_stat_agent_rewards_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_agent_rewards_std_dev', all_stat_agent_rewards_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'all_stat_agent_successes_mean', all_stat_agent_successes_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_agent_successes_std_dev', all_stat_agent_successes_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'stat_n_iter', stat_n_iter,delimiter=',')
 
 	####################################
 	########## SAVE THE MODEL ##########

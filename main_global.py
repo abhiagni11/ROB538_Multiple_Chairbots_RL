@@ -6,6 +6,7 @@ import torch.nn.init as init
 # from tensorboardX import SummaryWriter
 
 import math
+import os
 import random
 import numpy as np
 import matplotlib
@@ -37,9 +38,9 @@ def concatenate_state(all_tables, all_agents, all_groups_of_people):
 	return state_array
 
 def smooth(y, box_pts):
-    box = np.ones(box_pts)/box_pts
-    y_smooth = np.convolve(y, box, mode='same')
-    return y_smooth
+	box = np.ones(box_pts)/box_pts
+	y_smooth = np.convolve(y, box, mode='same')
+	return y_smooth
 
 if __name__ == "__main__":
 	torch.set_default_tensor_type('torch.DoubleTensor')
@@ -180,9 +181,9 @@ if __name__ == "__main__":
 		all_stat_agent_rewards.append(stat_agent_rewards)
 		all_stat_agent_successes.append(stat_agent_successes)
 
-	folder_save_config_in = '/Models/'
+	folder_save_config_in = 'Models/'
 	configuration_name = 'n_agents_' + str(number_of_agents) + '__grid_' + str(grid_dim_x) + 'x' + str(grid_dim_y) + '__groups_' + str(max_number_of_groups) + '/'
-	model_type = 'VDL/'
+	model_type = 'VDN/'
 	net_folder_dir = folder_save_config_in + configuration_name + model_type
 
 	################################################################
@@ -202,6 +203,27 @@ if __name__ == "__main__":
 	all_stat_agent_successes_std_dev = np.std(np.array(all_stat_agent_successes), axis=0)
 
 	stat_n_iter = np.array(stat_n_iter)
+
+	if not os.path.exists(os.path.dirname(net_folder_dir)):
+		try:
+			original_umask = os.umask(0)
+			os.makedirs(net_folder_dir, 0777)
+		finally:
+			os.umask(original_umask)
+
+	np.savetxt(net_folder_dir+'all_stat_system_rewards_mean',all_stat_system_rewards_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_system_rewards_std_dev',all_stat_system_rewards_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'all_stat_system_successes_mean',all_stat_system_successes_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_system_successes_std_dev',all_stat_system_successes_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'all_stat_agent_rewards_mean',all_stat_agent_rewards_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_agent_rewards_std_dev',all_stat_agent_rewards_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'all_stat_agent_successes_mean',all_stat_agent_successes_mean,delimiter = ',')
+	np.savetxt(net_folder_dir+'all_stat_agent_successes_std_dev',all_stat_agent_successes_std_dev,delimiter = ',')
+   
+	np.savetxt(net_folder_dir+'stat_n_iter', stat_n_iter,delimiter=',')
 
 	####################################
 	########## SAVE THE MODEL ##########
