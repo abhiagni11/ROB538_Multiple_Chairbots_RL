@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn.init as init
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 
 import math
 import random
@@ -26,7 +26,6 @@ from DQN import *
 
 
 def concatenate_state(all_tables, all_agents, all_groups_of_people):
-	
 	state = []
 	for elem, each_table in (all_tables.items()):
 		state.extend(each_table)
@@ -37,6 +36,10 @@ def concatenate_state(all_tables, all_agents, all_groups_of_people):
 	state_array = np.array(state)
 	return state_array
 
+def smooth(y, box_pts):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='same')
+    return y_smooth
 
 if __name__ == "__main__":
 
@@ -49,18 +52,19 @@ if __name__ == "__main__":
 	number_of_training_loops = 20
 	number_of_episodes = 40
 	number_of_steps = 250
+	number_of_stat_runs = 10
 
-	## eps_decay defines the rate of decay in exploration
-	## eps-decacy, gamma.;;	
-	
-	batch_size = 200
+	batch_size = 100
 	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.05
-	eps_decay = 300000
+	eps_decay = 150000
 	capacity = 100000
-	learning_rate = 5*1e-4
+	learning_rate = 1e-3
 	weight_decay = 1e-4
+
+	# Use this to toggle between global and difference rewards
+	Global_reward = False
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
@@ -72,12 +76,9 @@ if __name__ == "__main__":
 
 	all_the_agents = dict()
 
-
 	plot_rewards = []    
 	plot_successes = []
 	plot_N = 0
-	
-	number_of_stat_runs = 10
 
 	stat_n_iter = list()
 	all_stat_system_rewards = list()
@@ -151,12 +152,14 @@ if __name__ == "__main__":
 						difference_reward = restaurant.get_difference_reward(elem)
 						agent_reward = np.asarray(agent_reward, dtype=float)
 						difference_reward = np.asarray(difference_reward, dtype=float)
-						all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
+
+						if Global_reward:
+							all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(system_reward).unsqueeze(0))
+						else:
+							all_the_agents[elem].memory.push(torch.from_numpy(state).unsqueeze(0),torch.from_numpy(np.asarray([actions_of_all_agents[elem]], dtype=int)).unsqueeze(0),torch.from_numpy(next_state).unsqueeze(0),torch.from_numpy(agent_reward).unsqueeze(0))
 
 					# modify state for the next step
 					state = next_state
-					# restaurant.visualize_restaurant()
-					# time.sleep(0.001)
 
 				# if episode % 10 == 0: 
 				# 	print("Training Loop: {} ; Episode: {} ; Reward : {} ; Successes: {}".format(training_loop, episode, episode_reward, episode_successes))    
@@ -166,8 +169,6 @@ if __name__ == "__main__":
 				stat_system_rewards.append(episode_reward)
 				stat_system_successes.append(episode_successes)
 
-				# print('stat_run: {} ; episode_reward: {} ; stat_reward: {}'.format(stat_run, episode_reward, stat_system_rewards[stat_run][n_iter]))
-				
 				if not stat_run:
 					stat_n_iter.append(n_iter)
 
@@ -186,74 +187,103 @@ if __name__ == "__main__":
 		all_stat_system_successes.append(stat_system_successes)
 		all_stat_agent_rewards.append(stat_agent_rewards)
 		all_stat_agent_successes.append(stat_agent_successes)
-
-	print("TOTAL: stat_system_rewards: {} ; stat_system_successes: {} ; stat_agent_rewards: {} ; stat_agent_successes: {} ; stat_n_iter: {}".format(len(all_stat_system_rewards), len(all_stat_system_successes), len(all_stat_agent_rewards), len(all_stat_agent_successes), len(stat_n_iter)))
-
-	average_of_system_rewards = [0 for _ in range(len(stat_n_iter))]
-	average_of_system_successes = [0 for _ in range(len(stat_n_iter))]
-	average_of_agent_rewards = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
-	average_of_agent_successes = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
-
-	for stat_run in range(number_of_stat_runs):
-		for n_iter in stat_n_iter:
-			average_of_system_rewards[n_iter] += all_stat_system_rewards[stat_run][n_iter]
-			average_of_system_successes[n_iter] += all_stat_system_successes[stat_run][n_iter]
-			for agent in range(number_of_agents):
-				average_of_agent_rewards[agent][n_iter] += all_stat_agent_rewards[stat_run][agent][n_iter]
-				average_of_agent_successes[agent][n_iter] += all_stat_agent_successes[stat_run][agent][n_iter]
-
-	new_average_of_system_rewards = [ i / number_of_stat_runs for i in average_of_system_rewards]
-	new_average_of_system_successes = [ i / number_of_stat_runs for i in average_of_system_successes]
-	new_average_of_agent_rewards = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
-	new_average_of_agent_successes = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
-
-	for agent_id, rewards in enumerate(average_of_agent_rewards):
-		for elem, value in enumerate(rewards):
-			new_average_of_agent_rewards[agent_id][elem] = average_of_agent_rewards[agent_id][elem] / number_of_stat_runs
-
-	for agent_id, successes in enumerate(average_of_agent_successes):
-		for elem, value in enumerate(successes):
-			new_average_of_agent_successes[agent_id][elem] = average_of_agent_successes[agent_id][elem] / number_of_stat_runs
-
-	# Tensorboard
-	dt = datetime.now()
-	dt_round_microsec = round(dt.microsecond/1000)
-	# dt_round_microsec = dt
-	# filename = 'runs/ChairBot_DQN_' + str(number_of_agents) + '_agents_and_' + str(max_number_of_groups) + '_groups_in_' + str(grid_dim_x) + '_X_' + str(grid_dim_y) + '_in_' + str(number_of_training_loops) + '_training_loops' + str(dt_round_microsec)
-	filename = './runs/ChairBot_IQL_' + str(dt_round_microsec)
-
-	tensorboard_writer = SummaryWriter(filename)
 	
-	tensorboard_writer.add_text('env-params/number_of_tables', str(number_of_tables))
-	tensorboard_writer.add_text('env-params/number_of_agents', str(number_of_agents))
-	tensorboard_writer.add_text('env-params/grid_dim_x', str(grid_dim_x))
-	tensorboard_writer.add_text('env-params/grid_dim_y', str(grid_dim_y))
-	tensorboard_writer.add_text('env-params/max_number_of_groups', str(max_number_of_groups))
-	tensorboard_writer.add_text('env-params/number_of_training_loops', str(number_of_training_loops))
-	tensorboard_writer.add_text('env-params/number_of_episodes', str(number_of_episodes))
-	tensorboard_writer.add_text('env-params/number_of_steps', str(number_of_steps))
-	tensorboard_writer.add_text('hyper-params/batch_size', str(batch_size))
-	tensorboard_writer.add_text('hyper-params/gamma', str(gamma))
-	tensorboard_writer.add_text('hyper-params/eps_start', str(eps_start))
-	tensorboard_writer.add_text('hyper-params/eps_end', str(eps_end))
-	tensorboard_writer.add_text('hyper-params/eps_decay', str(eps_decay))
-	tensorboard_writer.add_text('hyper-params/learning_rate', str(learning_rate))
-	tensorboard_writer.add_text('hyper-params/weight_decay', str(weight_decay))
+	################################################################
+	##### Numpy arrays - SAVE THESE to the appropriate folders #####
+	################################################################
+
+	all_stat_system_rewards_mean = np.mean(np.array(all_stat_system_rewards), axis=0)
+	all_stat_system_rewards_std_dev = np.std(np.array(all_stat_system_rewards), axis=0)
+
+	all_stat_system_successes_mean = np.mean(np.array(all_stat_system_successes), axis=0)
+	all_stat_system_successes_std_dev = np.std(np.array(all_stat_system_successes), axis=0)
+
+	all_stat_agent_rewards_mean = np.mean(np.array(all_stat_agent_rewards), axis=0)
+	all_stat_agent_rewards_std_dev = np.std(np.array(all_stat_agent_rewards), axis=0)
+
+	all_stat_agent_successes_mean = np.mean(np.array(all_stat_agent_successes), axis=0)
+	all_stat_agent_successes_std_dev = np.std(np.array(all_stat_agent_successes), axis=0)
+
+	####################################
+	########## SAVE THE MODEL ##########
+	####################################
+
+	# for elem, each_agent in all_the_agents.items():
+	# 	model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
+	# 	# model_path = '/home/risheek/Pytorch_workspace/dqn_'+ str(elem)
+	# 	torch.save(each_agent.policy_net_agent.state_dict(), model_path)
 
 
-	for n_iter in stat_n_iter:
-		tensorboard_writer.add_scalar('system/rewards', new_average_of_system_rewards[n_iter], n_iter)
-		tensorboard_writer.add_scalar('system/successes', new_average_of_system_successes[n_iter], n_iter)
-		for elem in range(number_of_agents):
-			tensorboard_writer.add_scalar('agent' +str(elem) +'/rewards', new_average_of_agent_rewards[elem][n_iter], n_iter)
-			tensorboard_writer.add_scalar('agent' +str(elem) +'/successes', new_average_of_agent_successes[elem][n_iter], n_iter)
+	#####################################
+	########## IGNORE ALL THIS ##########
+	#####################################
+	# print("TOTAL: stat_system_rewards: {} ; stat_system_successes: {} ; stat_agent_rewards: {} ; stat_agent_successes: {} ; stat_n_iter: {}".format(len(all_stat_system_rewards), len(all_stat_system_successes), len(all_stat_agent_rewards), len(all_stat_agent_successes), len(stat_n_iter)))
 
-	for elem, each_agent in all_the_agents.items():
-		model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
-		torch.save(each_agent.policy_net_agent.state_dict(), model_path)
+	# average_of_system_rewards = [0 for _ in range(len(stat_n_iter))]
+	# average_of_system_successes = [0 for _ in range(len(stat_n_iter))]
+	# average_of_agent_rewards = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
+	# average_of_agent_successes = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
 
-	tensorboard_writer.export_scalars_to_json("./all_scalars.json")
-	tensorboard_writer.close()
+	# for stat_run in range(number_of_stat_runs):
+	# 	for n_iter in stat_n_iter:
+	# 		average_of_system_rewards[n_iter] += all_stat_system_rewards[stat_run][n_iter]
+	# 		average_of_system_successes[n_iter] += all_stat_system_successes[stat_run][n_iter]
+	# 		for agent in range(number_of_agents):
+	# 			average_of_agent_rewards[agent][n_iter] += all_stat_agent_rewards[stat_run][agent][n_iter]
+	# 			average_of_agent_successes[agent][n_iter] += all_stat_agent_successes[stat_run][agent][n_iter]
+
+	# new_average_of_system_rewards = [ i / number_of_stat_runs for i in average_of_system_rewards]
+	# new_average_of_system_successes = [ i / number_of_stat_runs for i in average_of_system_successes]
+	# new_average_of_agent_rewards = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
+	# new_average_of_agent_successes = [[0 for _ in range(len(stat_n_iter))] for _ in range(number_of_agents)]
+
+	# for agent_id, rewards in enumerate(average_of_agent_rewards):
+	# 	for elem, value in enumerate(rewards):
+	# 		new_average_of_agent_rewards[agent_id][elem] = average_of_agent_rewards[agent_id][elem] / number_of_stat_runs
+
+	# for agent_id, successes in enumerate(average_of_agent_successes):
+	# 	for elem, value in enumerate(successes):
+	# 		new_average_of_agent_successes[agent_id][elem] = average_of_agent_successes[agent_id][elem] / number_of_stat_runs
+
+	# # Tensorboard
+	# dt = datetime.now()
+	# dt_round_microsec = round(dt.microsecond/1000)
+	# # dt_round_microsec = dt
+	# # filename = 'runs/ChairBot_DQN_' + str(number_of_agents) + '_agents_and_' + str(max_number_of_groups) + '_groups_in_' + str(grid_dim_x) + '_X_' + str(grid_dim_y) + '_in_' + str(number_of_training_loops) + '_training_loops' + str(dt_round_microsec)
+	# filename = './runs/ChairBot_IQL_' + str(dt_round_microsec)
+
+	# tensorboard_writer = SummaryWriter(filename)
+	
+	# tensorboard_writer.add_text('env-params/number_of_tables', str(number_of_tables))
+	# tensorboard_writer.add_text('env-params/number_of_agents', str(number_of_agents))
+	# tensorboard_writer.add_text('env-params/grid_dim_x', str(grid_dim_x))
+	# tensorboard_writer.add_text('env-params/grid_dim_y', str(grid_dim_y))
+	# tensorboard_writer.add_text('env-params/max_number_of_groups', str(max_number_of_groups))
+	# tensorboard_writer.add_text('env-params/number_of_training_loops', str(number_of_training_loops))
+	# tensorboard_writer.add_text('env-params/number_of_episodes', str(number_of_episodes))
+	# tensorboard_writer.add_text('env-params/number_of_steps', str(number_of_steps))
+	# tensorboard_writer.add_text('hyper-params/batch_size', str(batch_size))
+	# tensorboard_writer.add_text('hyper-params/gamma', str(gamma))
+	# tensorboard_writer.add_text('hyper-params/eps_start', str(eps_start))
+	# tensorboard_writer.add_text('hyper-params/eps_end', str(eps_end))
+	# tensorboard_writer.add_text('hyper-params/eps_decay', str(eps_decay))
+	# tensorboard_writer.add_text('hyper-params/learning_rate', str(learning_rate))
+	# tensorboard_writer.add_text('hyper-params/weight_decay', str(weight_decay))
+
+
+	# for n_iter in stat_n_iter:
+	# 	tensorboard_writer.add_scalar('system/rewards', new_average_of_system_rewards[n_iter], n_iter)
+	# 	tensorboard_writer.add_scalar('system/successes', new_average_of_system_successes[n_iter], n_iter)
+	# 	for elem in range(number_of_agents):
+	# 		tensorboard_writer.add_scalar('agent' +str(elem) +'/rewards', new_average_of_agent_rewards[elem][n_iter], n_iter)
+	# 		tensorboard_writer.add_scalar('agent' +str(elem) +'/successes', new_average_of_agent_successes[elem][n_iter], n_iter)
+
+	# for elem, each_agent in all_the_agents.items():
+	# 	model_path = '/home/abhijeet/Pytorch_models/dqn_' + str(elem)
+	# 	torch.save(each_agent.policy_net_agent.state_dict(), model_path)
+
+	# tensorboard_writer.export_scalars_to_json("./all_scalars.json")
+	# tensorboard_writer.close()
 
 	# plot_rewards.append(episode_reward)        
 	# plot_successes.append(episode_successes)
