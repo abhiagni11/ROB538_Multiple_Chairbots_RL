@@ -46,8 +46,8 @@ if __name__ == "__main__":
 	torch.set_default_tensor_type('torch.DoubleTensor')
 
 	# Use this to toggle between global and difference rewards
-	# Global_reward = False
-	Global_reward = True
+	Global_reward = False
+	# Global_reward = True
 
 	number_of_tables = 6
 	number_of_agents = 6
