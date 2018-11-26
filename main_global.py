@@ -181,7 +181,9 @@ if __name__ == "__main__":
 		all_stat_agent_successes.append(stat_agent_successes)
 
 	folder_save_config_in = '/Models/'
-	configuration_name = 'n_agents_' + str(number_of_agents) + '__grid_' + str(grid_dim_x) + 'x' + str(grid_dim_y) + '__groups_' + str(max_number_of_groups)
+	configuration_name = 'n_agents_' + str(number_of_agents) + '__grid_' + str(grid_dim_x) + 'x' + str(grid_dim_y) + '__groups_' + str(max_number_of_groups) + '/'
+	model_type = 'VDL/'
+	net_folder_dir = folder_save_config_in + configuration_name + model_type
 
 	################################################################
 	##### Numpy arrays - SAVE THESE to the appropriate folders #####
