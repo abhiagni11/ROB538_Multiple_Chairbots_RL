@@ -46,8 +46,8 @@ if __name__ == "__main__":
 	torch.set_default_tensor_type('torch.DoubleTensor')
 
 	# Use this to toggle between global and difference rewards
-	# Global_reward = False
-	Global_reward = True
+	Global_reward = False
+	# Global_reward = True
 
 	number_of_tables = 2
 	number_of_agents = 2
@@ -57,13 +57,13 @@ if __name__ == "__main__":
 	number_of_training_loops = 25
 	number_of_episodes = 40
 	number_of_steps = 300
-	number_of_stat_runs = 1
+	number_of_stat_runs = 5
 
 	batch_size = 200
 	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.0
-	eps_decay = 290000
+	eps_decay = 300000
 	capacity = 20000
 	learning_rate = 1e-3
 	weight_decay = 1e-4
