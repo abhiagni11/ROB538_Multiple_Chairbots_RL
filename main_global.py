@@ -44,12 +44,13 @@ def smooth(y, box_pts):
 if __name__ == "__main__":
 
 	torch.set_default_tensor_type('torch.DoubleTensor')
-	number_of_tables = 6
-	number_of_agents = 6
-	grid_dim_x = 8
-	grid_dim_y = 8
-	max_number_of_groups = 6
-	number_of_training_loops = 40
+	
+	number_of_tables = 2
+	number_of_agents = 2
+	grid_dim_x = 4
+	grid_dim_y = 4
+	max_number_of_groups = 2
+	number_of_training_loops = 25
 	number_of_episodes = 40
 	number_of_steps = 300
 	number_of_stat_runs = 1
@@ -58,8 +59,8 @@ if __name__ == "__main__":
 	gamma = 0.9
 	eps_start = 0.9
 	eps_end = 0.0
-	eps_decay =48000
-	capacity = 200000
+	eps_decay = 290000
+	capacity = 20000
 	learning_rate = 1e-3
 	weight_decay = 1e-4
 
