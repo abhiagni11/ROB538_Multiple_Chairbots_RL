@@ -46,8 +46,8 @@ if __name__ == "__main__":
 	torch.set_default_tensor_type('torch.DoubleTensor')
 	number_of_tables = 2
 	number_of_agents = 2
-	grid_dim_x = 4
-	grid_dim_y = 4
+	grid_dim_x = 5
+	grid_dim_y = 5
 	max_number_of_groups = 3
 	number_of_training_loops = 2
 	number_of_episodes = 4
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 	weight_decay = 1e-4
 
 	# Use this to toggle between global and difference rewards
-	Global_reward = True
+	Global_reward = False
 
 	### DQN
 	Transition = namedtuple('Transition',('state', 'action', 'next_state', 'reward'))
