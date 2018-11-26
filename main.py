@@ -212,6 +212,8 @@ if __name__ == "__main__":
 	all_stat_agent_successes_mean = np.mean(np.array(all_stat_agent_successes), axis=0)
 	all_stat_agent_successes_std_dev = np.std(np.array(all_stat_agent_successes), axis=0)
 
+	stat_n_iter = np.array(stat_n_iter)
+
 	####################################
 	########## SAVE THE MODEL ##########
 	####################################
